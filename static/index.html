@@ -1,63 +1,51 @@
-const form = document.querySelector("#search-form");
-const queryInput = document.querySelector("#query");
-const sourceInput = document.querySelector("#source");
-const maxPriceInput = document.querySelector("#max-price");
-const resultsEl = document.querySelector("#results");
-const noticeEl = document.querySelector("#notice");
-const titleEl = document.querySelector("#results-title");
-const countEl = document.querySelector("#result-count");
-
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, ch => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
-  })[ch]);
-}
-
-function renderOffers(data) {
-  titleEl.textContent = `Результаты: ${data.query}`;
-  countEl.textContent = `${data.count} предложений`;
-  noticeEl.textContent = data.notice;
-  if (!data.offers.length) {
-    resultsEl.className = "results empty";
-    resultsEl.innerHTML = `<div class="empty-icon">⌕</div><b>В демоданных совпадений нет</b><p>Открой поиск на площадках ниже или попробуй другой запрос. Реальный сбор данных пока не подключён.</p>`;
-    const links = (data.marketplace_searches || []).map(x =>
-      `<a class="open-link" target="_blank" rel="noopener noreferrer" href="${escapeHtml(x.url)}">Искать на ${escapeHtml(x.source)} ↗</a>`
-    ).join("");
-    resultsEl.insertAdjacentHTML("beforeend", `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px">${links}</div>`);
-    return;
-  }
-  resultsEl.className = "results";
-  resultsEl.innerHTML = data.offers.map(o => `
-    <article class="offer">
-      <div><h3>${escapeHtml(o.title)}</h3>
-        <div class="offer-meta"><span class="tag">${escapeHtml(o.source)}</span><span class="tag">${escapeHtml(o.kind)}</span><span>${escapeHtml(o.region)}</span></div>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DigitalScout — поиск цифровых товаров</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-icon">D</span> DigitalScout</a>
+    <span class="status"><i></i> Поиск по площадкам</span>
+  </header>
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow">ЦИФРОВЫЕ ТОВАРЫ · В ОДНОМ МЕСТЕ</div>
+      <h1>Найди выгоднее.<br><span>Сравнивай быстрее.</span></h1>
+      <p>Ищи ключи, подписки и цифровые товары и сравнивай найденные предложения в одном интерфейсе.</p>
+      <form id="search-form" class="searchbar">
+        <span class="search-icon">⌕</span>
+        <input id="query" type="search" placeholder="Например, Windows 11 Pro" maxlength="120" required>
+        <button type="submit">Найти предложения <span>→</span></button>
+      </form>
+      <div class="quick-searches"><span>Популярные запросы:</span>
+        <button type="button" data-query="Windows 11 Pro">Windows 11 Pro</button>
+        <button type="button" data-query="Spotify Premium">Spotify Premium</button>
       </div>
-      <div class="price">${Number(o.price).toLocaleString("ru-RU")} <small>₽</small></div>
-      <a class="open-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer">Открыть источник ↗</a>
-    </article>`).join("");
-}
-
-async function search() {
-  const q = queryInput.value.trim();
-  if (!q) return;
-  titleEl.textContent = "Ищем предложения…";
-  resultsEl.className = "results empty";
-  resultsEl.innerHTML = "<b>Загружаем результаты</b>";
-  const params = new URLSearchParams({q, source: sourceInput.value});
-  if (maxPriceInput.value !== "") params.set("max_price", maxPriceInput.value);
-  try {
-    const response = await fetch(`/api/search?${params}`);
-    if (!response.ok) throw new Error("Не удалось выполнить поиск");
-    renderOffers(await response.json());
-  } catch (err) {
-    titleEl.textContent = "Ошибка поиска";
-    resultsEl.className = "results empty";
-    resultsEl.innerHTML = `<b>${escapeHtml(err.message)}</b><p>Проверь, запущен ли сервер.</p>`;
-  }
-}
-form.addEventListener("submit", e => { e.preventDefault(); search(); });
-document.querySelector("#apply-filters").addEventListener("click", search);
-document.querySelectorAll("[data-query]").forEach(button => button.addEventListener("click", () => {
-  queryInput.value = button.dataset.query;
-  search();
-}));
+    </section>
+    <section class="sources">
+      <div class="section-head"><div><div class="eyebrow">ИСТОЧНИКИ</div><h2>Площадки</h2></div><span class="muted">Подключение поэтапно</span></div>
+      <div class="source-grid">
+        <div class="source-card"><div class="source-logo plati">P</div><div><b>Plati.Market</b><small>API / доступные данные</small></div><span class="source-state">Источник</span></div>
+        <div class="source-card"><div class="source-logo ggsel">G</div><div><b>GGsel</b><small>Проверка способов доступа</small></div><span class="source-state">Источник</span></div>
+        <div class="source-card"><div class="source-logo funpay">F</div><div><b>FunPay</b><small>Отдельный адаптер</small></div><span class="source-state">Источник</span></div>
+      </div>
+    </section>
+    <section class="results-section">
+      <div class="section-head"><div><div class="eyebrow">РЕЗУЛЬТАТЫ</div><h2 id="results-title">Начни с поиска</h2></div><span id="result-count" class="muted"></span></div>
+      <div class="filters">
+        <label>Площадка<select id="source"><option value="all">Все площадки</option><option>Plati.Market</option><option>GGsel</option><option>FunPay</option></select></label>
+        <label>Цена до, ₽<input id="max-price" type="number" min="0" placeholder="Без лимита"></label>
+        <button id="apply-filters" type="button" class="secondary">Применить фильтры</button>
+      </div>
+      <div id="notice" class="notice">Пока это демонстрационная версия. Цены в примерах не являются реальными котировками.</div>
+      <div id="results" class="results empty"><div class="empty-icon">⌕</div><b>Введи название товара</b><p>Сначала покажем интерфейс и тестовые примеры. Реальные данные подключаются отдельными адаптерами.</p></div>
+    </section>
+    <footer><span>DigitalScout · MVP 0.1</span><span>Перед покупкой проверяй регион, срок действия и репутацию продавца.</span></footer>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
