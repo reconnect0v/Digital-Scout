@@ -1,51 +1,142 @@
+
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
   <title>DigitalScout — поиск цифровых товаров</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/"><span class="brand-icon">D</span> DigitalScout</a>
+    <a class="brand" href="/">
+      <span class="brand-icon">D</span>
+      DigitalScout
+    </a>
     <span class="status"><i></i> Поиск по площадкам</span>
   </header>
+
   <main class="container">
     <section class="hero">
       <div class="eyebrow">ЦИФРОВЫЕ ТОВАРЫ · В ОДНОМ МЕСТЕ</div>
-      <h1>Найди выгоднее.<br><span>Сравнивай быстрее.</span></h1>
-      <p>Ищи ключи, подписки и цифровые товары и сравнивай найденные предложения в одном интерфейсе.</p>
+      <h1>Найди выгоднее.<br>
+        <span>Сравнивай быстрее.</span>
+      </h1>
+      <p>
+        Ищи игровые ключи, подписки и цифровые товары.
+        Сравнивай предложения в одном интерфейсе.
+      </p>
+
       <form id="search-form" class="searchbar">
         <span class="search-icon">⌕</span>
-        <input id="query" type="search" placeholder="Например, Windows 11 Pro" maxlength="120" required>
-        <button type="submit">Найти предложения <span>→</span></button>
+        <input id="query" type="search"
+          placeholder="Например, Windows 11 Pro"
+          maxlength="120" required>
+        <button type="submit">Найти предложения →</button>
       </form>
-      <div class="quick-searches"><span>Популярные запросы:</span>
-        <button type="button" data-query="Windows 11 Pro">Windows 11 Pro</button>
-        <button type="button" data-query="Spotify Premium">Spotify Premium</button>
+
+      <div class="quick-searches">
+        <span>Популярные запросы:</span>
+        <button type="button" data-query="Windows 11 Pro">
+          Windows 11 Pro
+        </button>
+        <button type="button" data-query="Spotify Premium">
+          Spotify Premium
+        </button>
       </div>
     </section>
+
     <section class="sources">
-      <div class="section-head"><div><div class="eyebrow">ИСТОЧНИКИ</div><h2>Площадки</h2></div><span class="muted">Подключение поэтапно</span></div>
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">ИСТОЧНИКИ</div>
+          <h2>Площадки</h2>
+        </div>
+        <span class="muted">Подключение поэтапно</span>
+      </div>
+
       <div class="source-grid">
-        <div class="source-card"><div class="source-logo plati">P</div><div><b>Plati.Market</b><small>API / доступные данные</small></div><span class="source-state">Источник</span></div>
-        <div class="source-card"><div class="source-logo ggsel">G</div><div><b>GGsel</b><small>Проверка способов доступа</small></div><span class="source-state">Источник</span></div>
-        <div class="source-card"><div class="source-logo funpay">F</div><div><b>FunPay</b><small>Отдельный адаптер</small></div><span class="source-state">Источник</span></div>
+        <div class="source-card">
+          <div class="source-logo plati">P</div>
+          <div>
+            <b>Plati.Market</b>
+            <small>Цифровые товары</small>
+          </div>
+          <span class="source-state">Источник</span>
+        </div>
+
+        <div class="source-card">
+          <div class="source-logo ggsel">G</div>
+          <div>
+            <b>GGsel</b>
+            <small>Цифровые товары</small>
+          </div>
+          <span class="source-state">Источник</span>
+        </div>
+
+        <div class="source-card">
+          <div class="source-logo funpay">F</div>
+          <div>
+            <b>FunPay</b>
+            <small>Игры и услуги</small>
+          </div>
+          <span class="source-state">Источник</span>
+        </div>
       </div>
     </section>
+
     <section class="results-section">
-      <div class="section-head"><div><div class="eyebrow">РЕЗУЛЬТАТЫ</div><h2 id="results-title">Начни с поиска</h2></div><span id="result-count" class="muted"></span></div>
-      <div class="filters">
-        <label>Площадка<select id="source"><option value="all">Все площадки</option><option>Plati.Market</option><option>GGsel</option><option>FunPay</option></select></label>
-        <label>Цена до, ₽<input id="max-price" type="number" min="0" placeholder="Без лимита"></label>
-        <button id="apply-filters" type="button" class="secondary">Применить фильтры</button>
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">РЕЗУЛЬТАТЫ</div>
+          <h2 id="results-title">Начни с поиска</h2>
+        </div>
+        <span id="result-count" class="muted"></span>
       </div>
-      <div id="notice" class="notice">Пока это демонстрационная версия. Цены в примерах не являются реальными котировками.</div>
-      <div id="results" class="results empty"><div class="empty-icon">⌕</div><b>Введи название товара</b><p>Сначала покажем интерфейс и тестовые примеры. Реальные данные подключаются отдельными адаптерами.</p></div>
+
+      <div class="filters">
+        <label>
+          Площадка
+          <select id="source">
+            <option value="all">Все площадки</option>
+            <option>Plati.Market</option>
+            <option>GGsel</option>
+            <option>FunPay</option>
+          </select>
+        </label>
+
+        <label>
+          Цена до, ₽
+          <input id="max-price" type="number"
+            min="0" placeholder="Без лимита">
+        </label>
+
+        <button id="apply-filters" type="button" class="secondary">
+          Применить фильтры
+        </button>
+      </div>
+
+      <div id="notice" class="notice">
+        Сейчас отображаются демонстрационные данные.
+        Цены не являются актуальными предложениями продавцов.
+      </div>
+
+      <div id="results" class="results empty">
+        <div class="empty-icon">⌕</div>
+        <b>Введи название товара</b>
+        <p>
+          Найди товар, выбери площадку и установи максимальную цену.
+        </p>
+      </div>
     </section>
-    <footer><span>DigitalScout · MVP 0.1</span><span>Перед покупкой проверяй регион, срок действия и репутацию продавца.</span></footer>
+
+    <footer>
+      <span>DigitalScout · MVP 0.1</span>
+      <span>Перед покупкой проверяй условия предложения.</span>
+    </footer>
   </main>
+
   <script src="/static/app.js"></script>
 </body>
 </html>
