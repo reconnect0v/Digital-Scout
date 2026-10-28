@@ -1,40 +1,42 @@
 const form = document.querySelector("#search-form");
 const queryInput = document.querySelector("#query");
 const sourceSelect = document.querySelector("#source");
-const maxPriceInput = document.querySelector("#max-price");
-const applyFiltersButton = document.querySelector("#apply-filters");
 const results = document.querySelector("#results");
 const resultsTitle = document.querySelector("#results-title");
 const resultCount = document.querySelector("#result-count");
+const notice = document.querySelector("#notice");
 
 async function searchOffers() {
   const query = queryInput.value.trim();
   if (!query) return;
 
   results.className = "results empty";
-  results.replaceChildren(document.createTextNode("Ищем предложения…"));
-  resultsTitle.textContent = `Результаты: ${query}`;
+  results.textContent = "Готовим поиск по площадкам…";
+  resultsTitle.textContent = `Поиск: ${query}`;
   resultCount.textContent = "";
 
   const params = new URLSearchParams({ q: query, source: sourceSelect.value });
-  const maxPrice = maxPriceInput.value.trim();
-  if (maxPrice) params.set("max_price", maxPrice);
 
   try {
     const response = await fetch(`/api/search?${params.toString()}`);
     if (!response.ok) throw new Error(`Ошибка сервера (${response.status})`);
 
     const data = await response.json();
-    resultCount.textContent = `${data.count} предложений`;
+    notice.textContent = data.notice;
+    const externalCount = data.providers.filter((item) => item.status !== "live").length;
+    const countParts = [];
+    if (data.offers.length) countParts.push(`${data.offers.length} живых объявлений`);
+    if (externalCount) countParts.push(`${externalCount} внешних поисков`);
+    resultCount.textContent = countParts.join(" · ");
     results.replaceChildren();
+    results.className = "results provider-results";
 
-    if (!data.offers.length) {
+    if (!data.offers.length && !externalCount) {
       results.className = "results empty";
-      results.textContent = "По этому запросу предложений не найдено.";
+      results.textContent = "По этому запросу нет результатов.";
       return;
     }
 
-    results.className = "results";
     for (const offer of data.offers) {
       const card = document.createElement("article");
       card.className = "offer";
@@ -44,10 +46,10 @@ async function searchOffers() {
       title.textContent = offer.title;
       const meta = document.createElement("div");
       meta.className = "offer-meta";
-      const tag = document.createElement("span");
-      tag.className = "tag";
-      tag.textContent = offer.source;
-      meta.append(tag);
+      const source = document.createElement("span");
+      source.className = "tag";
+      source.textContent = offer.source;
+      meta.append(source);
       details.append(title, meta);
 
       const price = document.createElement("div");
@@ -59,14 +61,39 @@ async function searchOffers() {
       link.href = offer.url;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.textContent = "Открыть площадку →";
+      link.textContent = "Открыть объявление →";
 
       card.append(details, price, link);
       results.append(card);
     }
+
+    for (const provider of data.providers) {
+      if (provider.status === "live") continue;
+      const card = document.createElement("article");
+      card.className = "provider-search-card";
+
+      const name = document.createElement("div");
+      name.className = "provider-search-name";
+      name.textContent = provider.source;
+
+      const description = document.createElement("p");
+      description.textContent = provider.status === "unavailable"
+        ? "Не удалось загрузить прямую выдачу. Открой внешний поиск."
+        : "Откроется внешний поиск по страницам этой площадки.";
+
+      const link = document.createElement("a");
+      link.className = "open-link";
+      link.href = provider.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Найти →";
+
+      card.append(name, description, link);
+      results.append(card);
+    }
   } catch (error) {
     results.className = "results empty";
-    results.textContent = `Не удалось загрузить предложения. ${error.message}`;
+    results.textContent = `Не удалось подготовить поиск. ${error.message}`;
   }
 }
 
@@ -75,7 +102,9 @@ form.addEventListener("submit", (event) => {
   searchOffers();
 });
 
-applyFiltersButton.addEventListener("click", searchOffers);
+sourceSelect.addEventListener("change", () => {
+  if (queryInput.value.trim()) searchOffers();
+});
 
 document.querySelectorAll("[data-query]").forEach((button) => {
   button.addEventListener("click", () => {

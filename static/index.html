@@ -53,35 +53,44 @@
           <div class="eyebrow">ИСТОЧНИКИ</div>
           <h2>Площадки</h2>
         </div>
-        <span class="muted">Подключение поэтапно</span>
+        <span class="muted">Поиск по сайтам</span>
       </div>
 
       <div class="source-grid">
         <div class="source-card">
+          <div class="source-logo playerok">P</div>
+          <div>
+            <b>Playerok</b>
+            <small>Публичные объявления</small>
+          </div>
+          <span class="source-state">Поиск</span>
+        </div>
+
+        <div class="source-card">
           <div class="source-logo plati">P</div>
           <div>
             <b>Plati.Market</b>
-            <small>Цифровые товары</small>
+            <small>Публичные объявления</small>
           </div>
-          <span class="source-state">Источник</span>
+          <span class="source-state">Поиск</span>
         </div>
 
         <div class="source-card">
           <div class="source-logo ggsel">G</div>
           <div>
             <b>GGsel</b>
-            <small>Цифровые товары</small>
+            <small>Публичные объявления</small>
           </div>
-          <span class="source-state">Источник</span>
+          <span class="source-state">Поиск</span>
         </div>
 
         <div class="source-card">
           <div class="source-logo funpay">F</div>
           <div>
             <b>FunPay</b>
-            <small>Игры и услуги</small>
+            <small>Публичные объявления</small>
           </div>
-          <span class="source-state">Источник</span>
+          <span class="source-state">Поиск</span>
         </div>
       </div>
     </section>
@@ -100,26 +109,16 @@
           Площадка
           <select id="source">
             <option value="all">Все площадки</option>
+            <option>Playerok</option>
+            <option>FunPay</option>
             <option>Plati.Market</option>
             <option>GGsel</option>
-            <option>FunPay</option>
           </select>
         </label>
-
-        <label>
-          Цена до, ₽
-          <input id="max-price" type="number"
-            min="0" placeholder="Без лимита">
-        </label>
-
-        <button id="apply-filters" type="button" class="secondary">
-          Применить фильтры
-        </button>
       </div>
 
       <div id="notice" class="notice">
-        Сейчас отображаются демонстрационные данные.
-        Цены не являются актуальными предложениями продавцов.
+        DigitalScout загружает реальные объявления Plati.Market. Для Playerok, FunPay и GGsel откроется внешний поиск; цену и наличие проверяй на самой площадке.
       </div>
 
       <div id="results" class="results empty">
