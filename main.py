@@ -2,32 +2,21 @@ from pathlib import Path
 
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="DigitalScout")
+STATIC_DIR = BASE_DIR / "static"
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 def index():
-    path = BASE_DIR / "index.html"
+    path = STATIC_DIR / "index.html"
     if not path.exists():
-        return HTMLResponse("index.html not found", status_code=500)
-    return HTMLResponse(path.read_text(encoding="utf-8"))
-
-
-@app.get("/static/{filename}")
-def static_file(filename: str):
-    if filename not in ("style.css", "app.js"):
-        return HTMLResponse("Not found", status_code=404)
-
-    path = BASE_DIR / filename
-    if not path.is_file():
-        return HTMLResponse(
-            f"{filename} not found in repository root",
-            status_code=404
-        )
-
+        return HTMLResponse("static/index.html not found", status_code=500)
     return FileResponse(path)
 
 

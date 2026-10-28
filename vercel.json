@@ -1,12 +1,6 @@
 {
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
-    }
-  ],
   "functions": {
-    "api/index.py": {
+    "main.py": {
       "includeFiles": "static/**"
     }
   }
