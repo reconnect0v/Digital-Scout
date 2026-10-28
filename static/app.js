@@ -23,15 +23,15 @@ async function searchOffers() {
 
     const data = await response.json();
     notice.textContent = data.notice;
-    const externalCount = data.providers.filter((item) => item.status !== "live").length;
+    const inactiveCount = data.providers.filter((item) => item.status !== "live").length;
     const countParts = [];
-    if (data.offers.length) countParts.push(`${data.offers.length} живых объявлений`);
-    if (externalCount) countParts.push(`${externalCount} внешних поисков`);
+    if (data.offers.length) countParts.push(`${data.offers.length} объявлений`);
+    if (inactiveCount) countParts.push(`${inactiveCount} источника без выдачи`);
     resultCount.textContent = countParts.join(" · ");
     results.replaceChildren();
     results.className = "results provider-results";
 
-    if (!data.offers.length && !externalCount) {
+    if (!data.offers.length && !inactiveCount) {
       results.className = "results empty";
       results.textContent = "По этому запросу нет результатов.";
       return;
@@ -78,17 +78,10 @@ async function searchOffers() {
 
       const description = document.createElement("p");
       description.textContent = provider.status === "unavailable"
-        ? "Не удалось загрузить прямую выдачу. Открой внешний поиск."
-        : "Откроется внешний поиск по страницам этой площадки.";
+        ? "Сайт не ответил на запрос."
+        : "Прямой парсер для этой площадки ещё не подключён.";
 
-      const link = document.createElement("a");
-      link.className = "open-link";
-      link.href = provider.url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = "Найти →";
-
-      card.append(name, description, link);
+      card.append(name, description);
       results.append(card);
     }
   } catch (error) {

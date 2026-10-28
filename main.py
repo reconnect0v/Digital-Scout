@@ -1,8 +1,10 @@
 from pathlib import Path
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 import asyncio
-import json
+import re
+
+import requests
+from bs4 import BeautifulSoup
 
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, FileResponse
@@ -37,6 +39,12 @@ MARKETPLACES = {
 }
 
 
+def matches_query(query: str, title: str) -> bool:
+    words = re.findall(r"[a-zа-яё0-9]+", query.casefold())
+    normalized_title = title.casefold()
+    return all(word in normalized_title for word in words)
+
+
 def search_plati(query: str) -> list[dict]:
     """Read current listings from Plati's documented public catalog search."""
     params = urlencode({
@@ -45,12 +53,13 @@ def search_plati(query: str) -> list[dict]:
         "pagenum": 1,
         "response": "json",
     })
-    request = Request(
+    response = requests.get(
         f"https://plati.io/api/search.ashx?{params}",
-        headers={"User-Agent": "DigitalScout/0.1"},
+        headers={"User-Agent": "Mozilla/5.0 (compatible; DigitalScout/0.1)"},
+        timeout=10,
     )
-    with urlopen(request, timeout=7) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    response.raise_for_status()
+    payload = response.json()
 
     offers = []
     for item in payload.get("items", []):
@@ -60,7 +69,7 @@ def search_plati(query: str) -> list[dict]:
             url = str(item["url"])
         except (KeyError, TypeError, ValueError):
             continue
-        if not title or not url.startswith("https://plati.market/itm/"):
+        if not title or not matches_query(query, title) or not url.startswith("https://plati.market/itm/"):
             continue
         offers.append({
             "title": title,
@@ -68,6 +77,43 @@ def search_plati(query: str) -> list[dict]:
             "source": "Plati.Market",
             "url": url,
         })
+    return offers
+
+
+def search_ggsel(query: str) -> list[dict]:
+    response = requests.get(
+        "https://ggsel.net/catalog",
+        params={"search": query},
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36"},
+        timeout=10,
+    )
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, "html.parser")
+    offers = []
+
+    for card in soup.select('[data-testid="card"]'):
+        title_node = card.select_one('[data-testid="seo-text"]')
+        price_node = card.select_one('[data-test="price"]')
+        link_node = card.select_one('a[data-testid="card-link"]')
+        if not title_node or not price_node or not link_node:
+            continue
+
+        price_text = price_node.get_text(" ", strip=True).replace("\u00a0", " ")
+        match = re.search(r"([\d ]+(?:[,.]\d+)?)\s*₽", price_text)
+        if not match:
+            continue
+        price = float(match.group(1).replace(" ", "").replace(",", "."))
+        title = title_node.get_text(" ", strip=True)
+        href = link_node.get("href", "")
+        if not title or not matches_query(query, title) or not href.startswith("/catalog/product/"):
+            continue
+        offers.append({
+            "title": title,
+            "price": price,
+            "source": "GGsel",
+            "url": f"https://ggsel.net{href}",
+        })
+
     return offers
 
 
@@ -81,38 +127,49 @@ async def search(
         (name, domain) for name, domain in MARKETPLACES.items()
         if source.casefold() == "all" or source.casefold() == name.casefold()
     ]
-    providers = []
+    adapters = {
+        "Plati.Market": search_plati,
+        "GGsel": search_ggsel,
+    }
+    connected = [(name, adapters[name]) for name, _ in selected if name in adapters]
+    results = await asyncio.gather(
+        *(asyncio.to_thread(adapter, query) for _, adapter in connected),
+        return_exceptions=True,
+    )
     offers = []
-    for name, domain in selected:
-        if name == "Plati.Market" and len(query) >= 3:
-            try:
-                offers = await asyncio.to_thread(search_plati, query)
-                providers.append({"source": name, "status": "live", "count": len(offers)})
-                continue
-            except Exception:
-                providers.append({
-                    "source": name,
-                    "status": "unavailable",
-                    "url": "https://www.google.com/search?" + urlencode({"q": f"site:{domain} {query}"}),
-                })
-                continue
-        providers.append({
-            "source": name,
-            "status": "external-search",
-            "url": "https://www.google.com/search?" + urlencode({"q": f"site:{domain} {query}"}),
-        })
+    provider_results = {}
+    for (name, _), result in zip(connected, results):
+        if isinstance(result, Exception):
+            provider_results[name] = {"source": name, "status": "unavailable", "count": 0}
+            continue
+        offers.extend(result)
+        provider_results[name] = {"source": name, "status": "live", "count": len(result)}
 
-    if any(provider["status"] == "live" for provider in providers):
-        notice = "Ниже — реальные объявления Plati.Market. Для Playerok, FunPay и GGsel откроется внешний поиск."
-    elif any(provider["source"] == "Plati.Market" and provider["status"] == "unavailable" for provider in providers):
-        notice = "Не удалось загрузить Plati.Market сейчас. Открой внешний поиск по площадке; проверь цену и наличие на сайте."
+    providers = []
+    for name, _ in selected:
+        if name in provider_results:
+            providers.append(provider_results[name])
+        else:
+            providers.append({
+                "source": name,
+                "status": "not-connected",
+                "count": 0,
+            })
+    offers.sort(key=lambda offer: offer["price"])
+
+    live_sources = [provider["source"] for provider in providers if provider["status"] == "live"]
+    unavailable_sources = [provider["source"] for provider in providers if provider["status"] != "live"]
+    if live_sources and unavailable_sources:
+        notice = f"Живые объявления загружены: {', '.join(live_sources)}. Нет прямой выдачи: {', '.join(unavailable_sources)}."
+    elif live_sources:
+        notice = f"Живые объявления загружены: {', '.join(live_sources)}. Результаты отсортированы по цене."
     else:
-        notice = "Для выбранных площадок откроется внешний поиск. Цены и наличие проверяй на самих сайтах."
+        notice = "Не удалось получить живые объявления с выбранных площадок. Попробуй ещё раз позже."
 
     return {
         "query": query,
         "count": len(offers),
-        "mode": "live-and-external-search",
+        "mode": "live-search",
         "notice": notice,
         "providers": providers,
         "offers": offers,
