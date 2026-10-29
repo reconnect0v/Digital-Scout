@@ -23,15 +23,15 @@ async function searchOffers() {
 
     const data = await response.json();
     notice.textContent = data.notice;
-    const inactiveCount = data.providers.filter((item) => item.status !== "live").length;
+    const inactiveProviders = data.providers.filter((item) => item.status !== "live");
     const countParts = [];
     if (data.offers.length) countParts.push(`${data.offers.length} объявлений`);
-    if (inactiveCount) countParts.push(`${inactiveCount} источника без выдачи`);
+    if (inactiveProviders.length) countParts.push(`${inactiveProviders.length} с ограничениями`);
     resultCount.textContent = countParts.join(" · ");
     results.replaceChildren();
     results.className = "results provider-results";
 
-    if (!data.offers.length && !inactiveCount) {
+    if (!data.offers.length && !inactiveProviders.length) {
       results.className = "results empty";
       results.textContent = "По этому запросу нет результатов.";
       return;
@@ -67,8 +67,7 @@ async function searchOffers() {
       results.append(card);
     }
 
-    for (const provider of data.providers) {
-      if (provider.status === "live") continue;
+    for (const provider of inactiveProviders) {
       const card = document.createElement("article");
       card.className = "provider-search-card";
 
@@ -77,16 +76,20 @@ async function searchOffers() {
       name.textContent = provider.source;
 
       const description = document.createElement("p");
-      description.textContent = provider.status === "unavailable"
-        ? "Сайт не ответил на запрос."
-        : "Прямой парсер для этой площадки ещё не подключён.";
+      if (provider.status === "cloudflare-protected") {
+        description.textContent = "Защита Cloudflare Turnstile: для прямого поиска по Playerok требуется активная браузерная сессия (PLAYEROK_COOKIE).";
+      } else if (provider.status === "unavailable") {
+        description.textContent = "Площадка временно не ответила на запрос.";
+      } else {
+        description.textContent = "Прямой источник для этой площадки временно недоступен.";
+      }
 
       card.append(name, description);
       results.append(card);
     }
   } catch (error) {
     results.className = "results empty";
-    results.textContent = `Не удалось подготовить поиск. ${error.message}`;
+    results.textContent = `Не удалось выполнить поиск. ${error.message}`;
   }
 }
 

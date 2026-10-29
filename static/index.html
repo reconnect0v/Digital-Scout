@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="ru">
 <head>
@@ -25,24 +24,30 @@
       </h1>
       <p>
         Ищи игровые ключи, подписки и цифровые товары.
-        Сравнивай предложения в одном интерфейсе.
+        Сравнивай живые предложения в одном списке с сортировкой по цене.
       </p>
 
       <form id="search-form" class="searchbar">
         <span class="search-icon">⌕</span>
         <input id="query" type="search"
-          placeholder="Например, Windows 11 Pro"
+          placeholder="Например, Spotify Premium или Windows 11 Pro"
           maxlength="120" required>
         <button type="submit">Найти предложения →</button>
       </form>
 
       <div class="quick-searches">
         <span>Популярные запросы:</span>
+        <button type="button" data-query="Spotify Premium">
+          Spotify Premium
+        </button>
         <button type="button" data-query="Windows 11 Pro">
           Windows 11 Pro
         </button>
-        <button type="button" data-query="Spotify Premium">
-          Spotify Premium
+        <button type="button" data-query="Telegram Premium">
+          Telegram Premium
+        </button>
+        <button type="button" data-query="Steam">
+          Steam
         </button>
       </div>
     </section>
@@ -57,15 +62,6 @@
       </div>
 
       <div class="source-grid">
-        <div class="source-card">
-          <div class="source-logo playerok">P</div>
-          <div>
-            <b>Playerok</b>
-            <small>Пока не подключён</small>
-          </div>
-          <span class="source-state">Нет выдачи</span>
-        </div>
-
         <div class="source-card">
           <div class="source-logo plati">P</div>
           <div>
@@ -88,9 +84,18 @@
           <div class="source-logo funpay">F</div>
           <div>
             <b>FunPay</b>
-            <small>Пока не подключён</small>
+            <small>Живые объявления</small>
           </div>
-          <span class="source-state">Нет выдачи</span>
+          <span class="source-state">Подключён</span>
+        </div>
+
+        <div class="source-card">
+          <div class="source-logo playerok">P</div>
+          <div>
+            <b>Playerok</b>
+            <small>Cloudflare Turnstile</small>
+          </div>
+          <span class="source-state">Требует сессию</span>
         </div>
       </div>
     </section>
@@ -109,30 +114,30 @@
           Площадка
           <select id="source">
             <option value="all">Все площадки</option>
-            <option>Playerok</option>
-            <option>FunPay</option>
-            <option>Plati.Market</option>
-            <option>GGsel</option>
+            <option value="Plati.Market">Plati.Market</option>
+            <option value="GGsel">GGsel</option>
+            <option value="FunPay">FunPay</option>
+            <option value="Playerok">Playerok</option>
           </select>
         </label>
       </div>
 
       <div id="notice" class="notice">
-        Введи товар, чтобы получить актуальные объявления с подключённых площадок. Источники без прямой выдачи будут отмечены отдельно.
+        Введи товар, чтобы получить актуальные объявления с подключённых площадок. Результаты автоматически сортируются по возрастанию цены.
       </div>
 
       <div id="results" class="results empty">
         <div class="empty-icon">⌕</div>
         <b>Введи название товара</b>
         <p>
-          Найди товар, выбери площадку и установи максимальную цену.
+          Найди товар, выбери площадку и сравни реальные цены.
         </p>
       </div>
     </section>
 
     <footer>
-      <span>DigitalScout · MVP 0.1</span>
-      <span>Перед покупкой проверяй условия предложения.</span>
+      <span>DigitalScout · MVP 0.2</span>
+      <span>Перед покупкой проверяй условия предложения на самой площадке.</span>
     </footer>
   </main>
 
