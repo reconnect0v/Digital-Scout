@@ -6,8 +6,8 @@ from urllib.parse import urlencode
 
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Query
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 try:
@@ -18,21 +18,39 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
-app = FastAPI(title="DigitalScout")
+app = FastAPI(title="DigitalScout", redirect_slashes=False)
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+def get_index_path() -> Path:
+    candidates = [
+        STATIC_DIR / "index.html",
+        BASE_DIR / "index.html",
+    ]
+    for p in candidates:
+        if p.is_file():
+            return p
+    return candidates[0]
+
+
 @app.get("/")
+@app.get("/index")
+@app.get("/index.html")
+@app.get("/api")
+@app.get("/api/")
+@app.get("/api/index")
+@app.get("/api/index.py")
 def index():
-    path = STATIC_DIR / "index.html"
+    path = get_index_path()
     if not path.exists():
-        return HTMLResponse("static/index.html not found", status_code=500)
+        return HTMLResponse("index.html not found", status_code=500)
     return FileResponse(path)
 
 
 @app.get("/api/health")
+@app.get("/health")
 def health():
     return {
         "status": "ok",
@@ -322,7 +340,6 @@ def search_playerok(query: str) -> list[dict]:
         """,
     }
 
-    # Attempt query using curl_cffi (if available) or standard requests
     client = cffi_requests if cffi_requests is not None else requests
     kwargs = {
         "headers": headers,
@@ -364,6 +381,7 @@ def search_playerok(query: str) -> list[dict]:
 
 
 @app.get("/api/search")
+@app.get("/search")
 async def search(
     q: str = Query(..., min_length=1, max_length=120),
     source: str = "all",
@@ -443,3 +461,34 @@ async def search(
         "providers": providers,
         "offers": offers,
     }
+
+
+# Catch-all fallback route: handles any request shape forwarded by Vercel rewrites
+@app.api_route("/{full_path:path}", methods=["GET", "POST"])
+async def catch_all_route(full_path: str, request: Request):
+    clean_path = full_path.strip("/")
+    # If looking for search
+    if clean_path.endswith("search"):
+        q = request.query_params.get("q", "")
+        source = request.query_params.get("source", "all")
+        if q:
+            return await search(q=q, source=source)
+        return JSONResponse({"error": "missing query"}, status_code=400)
+
+    # If looking for health
+    if clean_path.endswith("health"):
+        return health()
+
+    # If looking for static file
+    if clean_path.startswith("static/"):
+        rel_path = clean_path[len("static/"):]
+        target = STATIC_DIR / rel_path
+        if target.is_file():
+            return FileResponse(target)
+
+    # Otherwise return index.html
+    path = get_index_path()
+    if path.is_file():
+        return FileResponse(path)
+
+    return HTMLResponse("index.html not found", status_code=404)

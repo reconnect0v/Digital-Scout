@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>DigitalScout — поиск цифровых товаров</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-icon">D</span>
+      DigitalScout
+    </a>
+    <span class="status"><i></i> Поиск по площадкам</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow">ЦИФРОВЫЕ ТОВАРЫ · В ОДНОМ МЕСТЕ</div>
+      <h1>Найди выгоднее.<br>
+        <span>Сравнивай быстрее.</span>
+      </h1>
+      <p>
+        Ищи игровые ключи, подписки и цифровые товары.
+        Сравнивай живые предложения в одном списке с сортировкой по цене.
+      </p>
+
+      <form id="search-form" class="searchbar">
+        <span class="search-icon">⌕</span>
+        <input id="query" type="search"
+          placeholder="Например, Spotify Premium или Windows 11 Pro"
+          maxlength="120" required>
+        <button type="submit">Найти предложения →</button>
+      </form>
+
+      <div class="quick-searches">
+        <span>Популярные запросы:</span>
+        <button type="button" data-query="Spotify Premium">
+          Spotify Premium
+        </button>
+        <button type="button" data-query="Windows 11 Pro">
+          Windows 11 Pro
+        </button>
+        <button type="button" data-query="Telegram Premium">
+          Telegram Premium
+        </button>
+        <button type="button" data-query="Steam">
+          Steam
+        </button>
+      </div>
+    </section>
+
+    <section class="sources">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">ИСТОЧНИКИ</div>
+          <h2>Площадки</h2>
+        </div>
+        <span class="muted">Поиск по сайтам</span>
+      </div>
+
+      <div class="source-grid">
+        <div class="source-card">
+          <div class="source-logo plati">P</div>
+          <div>
+            <b>Plati.Market</b>
+            <small>Живые объявления</small>
+          </div>
+          <span class="source-state">Подключён</span>
+        </div>
+
+        <div class="source-card">
+          <div class="source-logo ggsel">G</div>
+          <div>
+            <b>GGsel</b>
+            <small>Живые объявления</small>
+          </div>
+          <span class="source-state">Подключён</span>
+        </div>
+
+        <div class="source-card">
+          <div class="source-logo funpay">F</div>
+          <div>
+            <b>FunPay</b>
+            <small>Живые объявления</small>
+          </div>
+          <span class="source-state">Подключён</span>
+        </div>
+
+        <div class="source-card">
+          <div class="source-logo playerok">P</div>
+          <div>
+            <b>Playerok</b>
+            <small>Cloudflare Turnstile</small>
+          </div>
+          <span class="source-state">Требует сессию</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="results-section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">РЕЗУЛЬТАТЫ</div>
+          <h2 id="results-title">Начни с поиска</h2>
+        </div>
+        <span id="result-count" class="muted"></span>
+      </div>
+
+      <div class="filters">
+        <label>
+          Площадка
+          <select id="source">
+            <option value="all">Все площадки</option>
+            <option value="Plati.Market">Plati.Market</option>
+            <option value="GGsel">GGsel</option>
+            <option value="FunPay">FunPay</option>
+            <option value="Playerok">Playerok</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="notice" class="notice">
+        Введи товар, чтобы получить актуальные объявления с подключённых площадок. Результаты автоматически сортируются по возрастанию цены.
+      </div>
+
+      <div id="results" class="results empty">
+        <div class="empty-icon">⌕</div>
+        <b>Введи название товара</b>
+        <p>
+          Найди товар, выбери площадку и сравни реальные цены.
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      <span>DigitalScout · MVP 0.2</span>
+      <span>Перед покупкой проверяй условия предложения на самой площадке.</span>
+    </footer>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
