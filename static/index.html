@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0d12">
-  <title>DigitalScout — поиск цифровых товаров</title>
+  <meta name="theme-color" content="#07090e">
+  <title>DigitalScout — Умный поиск цифровых товаров</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -13,131 +13,147 @@
       <span class="brand-icon">D</span>
       DigitalScout
     </a>
-    <span class="status"><i></i> Поиск по площадкам</span>
+    <div class="topbar-status">
+      <span class="pulse-dot"></span>
+      Прямой поиск по площадкам
+    </div>
   </header>
 
   <main class="container">
     <section class="hero">
-      <div class="eyebrow">ЦИФРОВЫЕ ТОВАРЫ · В ОДНОМ МЕСТЕ</div>
-      <h1>Найди выгоднее.<br>
+      <div class="eyebrow">⚡ УМНЫЙ СКАУТ ЦИФРОВЫХ ТОВАРОВ</div>
+      <h1>
+        Найди выгоднее.<br>
         <span>Сравнивай быстрее.</span>
       </h1>
       <p>
-        Ищи игровые ключи, подписки и цифровые товары.
-        Сравнивай живые предложения в одном списке с сортировкой по цене.
+        Ищи ключи игр, подписки и сервисы по маркетплейсам.
+        Все предложения в едином списке с гарантированной сортировкой по лучшей цене.
       </p>
 
-      <form id="search-form" class="searchbar">
-        <span class="search-icon">⌕</span>
-        <input id="query" type="search"
-          placeholder="Например, Spotify Premium или Windows 11 Pro"
-          maxlength="120" required>
-        <button type="submit">Найти предложения →</button>
-      </form>
+      <div class="searchbar-wrap">
+        <form id="search-form" class="searchbar">
+          <span class="search-icon">⌕</span>
+          <input 
+            id="query" 
+            type="search" 
+            placeholder="Например, Spotify Premium, Windows 11 Pro или Discord Nitro"
+            maxlength="120" 
+            autocomplete="off"
+            required>
+          <button type="submit" class="btn-search" id="search-button">
+            Найти предложения →
+          </button>
+        </form>
 
-      <div class="quick-searches">
-        <span>Популярные запросы:</span>
-        <button type="button" data-query="Spotify Premium">
-          Spotify Premium
-        </button>
-        <button type="button" data-query="Windows 11 Pro">
-          Windows 11 Pro
-        </button>
-        <button type="button" data-query="Telegram Premium">
-          Telegram Premium
-        </button>
-        <button type="button" data-query="Steam">
-          Steam
-        </button>
+        <div class="quick-searches">
+          <span>Популярные:</span>
+          <button type="button" data-query="Spotify Premium">Spotify Premium</button>
+          <button type="button" data-query="Windows 11 Pro">Windows 11 Pro</button>
+          <button type="button" data-query="Telegram Premium">Telegram Premium</button>
+          <button type="button" data-query="Steam">Steam</button>
+          <button type="button" data-query="Discord Nitro">Discord Nitro</button>
+          <button type="button" data-query="ChatGPT Plus">ChatGPT</button>
+        </div>
       </div>
     </section>
 
     <section class="sources">
-      <div class="section-head">
-        <div>
-          <div class="eyebrow">ИСТОЧНИКИ</div>
-          <h2>Площадки</h2>
-        </div>
-        <span class="muted">Поиск по сайтам</span>
-      </div>
-
       <div class="source-grid">
         <div class="source-card">
           <div class="source-logo plati">P</div>
-          <div>
+          <div class="source-info">
             <b>Plati.Market</b>
-            <small>Живые объявления</small>
+            <small>Публичный API</small>
           </div>
-          <span class="source-state">Подключён</span>
-        </div>
-
-        <div class="source-card">
-          <div class="source-logo ggsel">G</div>
-          <div>
-            <b>GGsel</b>
-            <small>Живые объявления</small>
-          </div>
-          <span class="source-state">Подключён</span>
+          <span class="source-badge live">● Онлайн</span>
         </div>
 
         <div class="source-card">
           <div class="source-logo funpay">F</div>
-          <div>
+          <div class="source-info">
             <b>FunPay</b>
             <small>Живые объявления</small>
           </div>
-          <span class="source-state">Подключён</span>
+          <span class="source-badge live">● Онлайн</span>
+        </div>
+
+        <div class="source-card">
+          <div class="source-logo ggsel">G</div>
+          <div class="source-info">
+            <b>GGsel</b>
+            <small>Каталог товаров</small>
+          </div>
+          <span class="source-badge live">● Онлайн</span>
         </div>
 
         <div class="source-card">
           <div class="source-logo playerok">P</div>
-          <div>
+          <div class="source-info">
             <b>Playerok</b>
-            <small>Cloudflare Turnstile</small>
+            <small>Cloudflare Защита</small>
           </div>
-          <span class="source-state">Требует сессию</span>
+          <span class="source-badge info">Сессия</span>
         </div>
       </div>
     </section>
 
-    <section class="results-section">
+    <section id="results-section" class="results-section">
       <div class="section-head">
         <div>
-          <div class="eyebrow">РЕЗУЛЬТАТЫ</div>
-          <h2 id="results-title">Начни с поиска</h2>
+          <h2 id="results-title">Результаты поиска</h2>
         </div>
-        <span id="result-count" class="muted"></span>
+        <div id="stats-pill" class="stats-pill">Ожидание запроса</div>
       </div>
 
-      <div class="filters">
-        <label>
-          Площадка
-          <select id="source">
-            <option value="all">Все площадки</option>
-            <option value="Plati.Market">Plati.Market</option>
-            <option value="GGsel">GGsel</option>
-            <option value="FunPay">FunPay</option>
-            <option value="Playerok">Playerok</option>
+      <!-- Filter & Sort Toolbar -->
+      <div class="filter-toolbar">
+        <div class="platform-pills" id="platform-pills">
+          <button type="button" class="platform-pill active" data-platform="all">
+            Все площадки <span class="pill-count" id="count-all">0</span>
+          </button>
+          <button type="button" class="platform-pill" data-platform="FunPay">
+            FunPay <span class="pill-count" id="count-funpay">0</span>
+          </button>
+          <button type="button" class="platform-pill" data-platform="Plati.Market">
+            Plati <span class="pill-count" id="count-plati">0</span>
+          </button>
+          <button type="button" class="platform-pill" data-platform="GGsel">
+            GGsel <span class="pill-count" id="count-ggsel">0</span>
+          </button>
+          <button type="button" class="platform-pill" data-platform="Playerok">
+            Playerok <span class="pill-count" id="count-playerok">0</span>
+          </button>
+        </div>
+
+        <div class="sort-and-price">
+          <select id="sort-order" class="sort-select" title="Сортировка по цене">
+            <option value="cheap-first">🔽 Сначала дешёвые</option>
+            <option value="expensive-first">🔼 Сначала дорогие</option>
           </select>
-        </label>
+
+          <div class="price-inputs">
+            <span>Цена:</span>
+            <input type="number" id="min-price" class="price-input" placeholder="От ₽" min="0">
+            <input type="number" id="max-price" class="price-input" placeholder="До ₽" min="0">
+          </div>
+        </div>
       </div>
 
-      <div id="notice" class="notice">
-        Введи товар, чтобы получить актуальные объявления с подключённых площадок. Результаты автоматически сортируются по возрастанию цены.
-      </div>
+      <div id="notice" class="notice" style="display: none;"></div>
 
-      <div id="results" class="results empty">
-        <div class="empty-icon">⌕</div>
-        <b>Введи название товара</b>
-        <p>
-          Найди товар, выбери площадку и сравни реальные цены.
-        </p>
+      <div id="results" class="results-grid">
+        <div class="empty-state">
+          <div class="empty-icon">⌕</div>
+          <h3>Введи название товара</h3>
+          <p>Найди нужный сервис, подписку или ключ. Мы соберём реальные предложения и автоматически отсортируем от самых дешёвых.</p>
+        </div>
       </div>
     </section>
 
     <footer>
-      <span>DigitalScout · MVP 0.2</span>
-      <span>Перед покупкой проверяй условия предложения на самой площадке.</span>
+      <span>DigitalScout · Поиск цифровых товаров 2026</span>
+      <span>Все цены и карточки обновляются в режиме реального времени.</span>
     </footer>
   </main>
 

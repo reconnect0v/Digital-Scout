@@ -26,8 +26,8 @@ if STATIC_DIR.exists():
 
 def get_index_path() -> Path:
     candidates = [
-        STATIC_DIR / "index.html",
         BASE_DIR / "index.html",
+        STATIC_DIR / "index.html",
     ]
     for p in candidates:
         if p.is_file():
@@ -54,27 +54,36 @@ def index():
 def health():
     return {
         "status": "ok",
-        "sources": ["Plati.Market", "GGsel", "FunPay", "Playerok"],
+        "sources": ["Plati.Market", "FunPay", "GGsel", "Playerok"],
     }
 
 
 MARKETPLACES = {
     "Plati.Market": "plati.market",
-    "GGsel": "ggsel.net",
     "FunPay": "funpay.com",
+    "GGsel": "ggsel.net",
     "Playerok": "playerok.com",
 }
 
 COMMON_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 
 
 def matches_query(query: str, title: str) -> bool:
+    """Check if title contains key terms from the query."""
     words = re.findall(r"[a-zа-яё0-9]+", query.casefold())
+    if not words:
+        return True
     normalized_title = title.casefold()
-    return all(word in normalized_title for word in words)
+    # If single word, must match
+    if len(words) == 1:
+        return words[0] in normalized_title
+    # If multi-word, at least the primary keyword (first word or longest word) must be in title
+    primary_word = max(words, key=len)
+    return primary_word in normalized_title
 
 
 # --- Plati.Market Adapter ---
@@ -86,87 +95,45 @@ def search_plati(query: str) -> list[dict]:
         "pagenum": 1,
         "response": "json",
     })
-    response = requests.get(
+    urls = [
+        f"https://plati.market/api/search.ashx?{params}",
         f"https://plati.io/api/search.ashx?{params}",
-        headers=COMMON_HEADERS,
-        timeout=12,
-    )
-    response.raise_for_status()
-    payload = response.json()
-
-    offers = []
-    for item in payload.get("items", []):
-        try:
-            price = float(item["price_rur"])
-            title = str(item["name"]).strip()
-            url = str(item["url"])
-        except (KeyError, TypeError, ValueError):
-            continue
-
-        if not title or not matches_query(query, title) or not url.startswith("https://plati.market/itm/"):
-            continue
-
-        offers.append({
-            "title": title,
-            "price": price,
-            "source": "Plati.Market",
-            "url": url,
-        })
-    return offers
-
-
-# --- GGsel Adapter ---
-def search_ggsel(query: str) -> list[dict]:
-    """Search listings via GGsel catalog search."""
-    urls = ["https://ggsel.net/catalog", "https://ggsel.com/catalog"]
+    ]
     last_error = None
 
     for url in urls:
         try:
             response = requests.get(
                 url,
-                params={"search": query},
                 headers=COMMON_HEADERS,
                 timeout=8,
             )
             response.raise_for_status()
-            soup = BeautifulSoup(response.text, "html.parser")
+            payload = response.json()
             offers = []
-
-            for card in soup.select('[data-testid="card"]'):
-                title_node = card.select_one('[data-testid="seo-text"]')
-                price_node = card.select_one('[data-test="price"]')
-                link_node = card.select_one('a[data-testid="card-link"]')
-                if not title_node or not price_node or not link_node:
-                    continue
-
-                price_text = price_node.get_text(" ", strip=True).replace("\u00a0", " ")
-                match = re.search(r"([\d ]+(?:[,.]\d+)?)\s*₽", price_text)
-                if not match:
-                    continue
+            for item in payload.get("items", []):
                 try:
-                    price = float(match.group(1).replace(" ", "").replace(",", "."))
-                except ValueError:
+                    price = float(item["price_rur"])
+                    title = str(item["name"]).strip()
+                    item_url = str(item["url"])
+                    if not title or price <= 0:
+                        continue
+                    if not matches_query(query, title):
+                        continue
+                    offers.append({
+                        "title": title,
+                        "price": price,
+                        "source": "Plati.Market",
+                        "url": item_url,
+                    })
+                except Exception:
                     continue
-
-                title = title_node.get_text(" ", strip=True)
-                href = link_node.get("href", "")
-                if not title or not matches_query(query, title) or not href.startswith("/catalog/product/"):
-                    continue
-
-                base_url = "https://ggsel.net" if "ggsel.net" in url else "https://ggsel.com"
-                offers.append({
-                    "title": title,
-                    "price": price,
-                    "source": "GGsel",
-                    "url": f"{base_url}{href}",
-                })
             return offers
         except Exception as exc:
             last_error = exc
             continue
 
-    raise RuntimeError(f"GGsel недоступен ({last_error})")
+    raise RuntimeError(f"Plati.Market недоступен ({last_error})")
 
 
 # --- FunPay Adapter ---
@@ -198,7 +165,7 @@ def search_funpay(query: str) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
     games = soup.select(".promo-game-item")
 
-    # If full query returned no games, try searching by main words
+    # If full query returned no games, try searching by individual words
     if not games:
         words = re.findall(r"[a-zа-яё0-9]+", query)
         for word in words:
@@ -295,12 +262,68 @@ def search_funpay(query: str) -> list[dict]:
                 "source": "FunPay",
                 "url": full_url,
             })
-            if len(offers) >= 25:
+            if len(offers) >= 30:
                 break
-        if len(offers) >= 25:
+        if len(offers) >= 30:
             break
 
     return offers
+
+
+# --- GGsel Adapter ---
+def search_ggsel(query: str) -> list[dict]:
+    """Search listings via GGsel catalog search."""
+    urls = ["https://ggsel.net/catalog", "https://ggsel.com/catalog"]
+    last_error = None
+
+    for url in urls:
+        try:
+            response = requests.get(
+                url,
+                params={"search": query},
+                headers=COMMON_HEADERS,
+                timeout=8,
+            )
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+            offers = []
+
+            for card in soup.select('[data-testid="card"]'):
+                title_node = card.select_one('[data-testid="seo-text"]')
+                price_node = card.select_one('[data-test="price"]')
+                link_node = card.select_one('a[data-testid="card-link"]')
+                if not title_node or not price_node or not link_node:
+                    continue
+
+                price_text = price_node.get_text(" ", strip=True).replace("\u00a0", " ")
+                match = re.search(r"([\d ]+(?:[,.]\d+)?)\s*₽", price_text)
+                if not match:
+                    continue
+                try:
+                    price = float(match.group(1).replace(" ", "").replace(",", "."))
+                except ValueError:
+                    continue
+
+                title = title_node.get_text(" ", strip=True)
+                href = link_node.get("href", "")
+                if not title or not href.startswith("/catalog/product/"):
+                    continue
+                if not matches_query(query, title):
+                    continue
+
+                base_url = "https://ggsel.net" if "ggsel.net" in url else "https://ggsel.com"
+                offers.append({
+                    "title": title,
+                    "price": price,
+                    "source": "GGsel",
+                    "url": f"{base_url}{href}",
+                })
+            return offers
+        except Exception as exc:
+            last_error = exc
+            continue
+
+    raise RuntimeError(f"GGsel недоступен ({last_error})")
 
 
 # --- Playerok Adapter ---
@@ -394,8 +417,8 @@ async def search(
 
     adapters = {
         "Plati.Market": search_plati,
-        "GGsel": search_ggsel,
         "FunPay": search_funpay,
+        "GGsel": search_ggsel,
         "Playerok": search_playerok,
     }
 
@@ -440,22 +463,25 @@ async def search(
                 "count": 0,
             })
 
-    # Sort all combined listings by price from lowest to highest
+    # Strict sorting from cheapest to most expensive (lowest price first)
     offers.sort(key=lambda item: item["price"])
 
     live_sources = [p["source"] for p in providers if p["status"] == "live"]
     unavailable_sources = [p["source"] for p in providers if p["status"] != "live"]
 
     if live_sources and unavailable_sources:
-        notice = f"Живые объявления загружены с: {', '.join(live_sources)}. Не ответили или ограничены: {', '.join(unavailable_sources)}. Отсортировано по цене."
+        notice = f"Живые объявления получены: {', '.join(live_sources)}. Не ответили или требуют доступ: {', '.join(unavailable_sources)}."
     elif live_sources:
-        notice = f"Живые объявления загружены со всех выбранных площадок ({', '.join(live_sources)}). Отсортировано по возрастанию цены."
+        notice = f"Живые объявления получены со всех площадок: {', '.join(live_sources)}."
     else:
         notice = "Не удалось получить живые предложения с выбранных площадок. Попробуй ещё раз позже."
+
+    min_price = offers[0]["price"] if offers else 0
 
     return {
         "query": query,
         "count": len(offers),
+        "min_price": min_price,
         "mode": "live-search",
         "notice": notice,
         "providers": providers,
