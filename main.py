@@ -89,7 +89,7 @@ def search_plati(query: str) -> list[dict]:
     response = requests.get(
         f"https://plati.io/api/search.ashx?{params}",
         headers=COMMON_HEADERS,
-        timeout=10,
+        timeout=12,
     )
     response.raise_for_status()
     payload = response.json()
